@@ -1,6 +1,6 @@
 ## template for a CMake C++ Library
 cmake_minimum_required(VERSION 3.14)
-project(libpressio_jit VERSION "0.0.1" LANGUAGES CXX)
+project(libpressio_jit VERSION "0.0.2" LANGUAGES CXX)
 
 #correct was to set a default build type
 # https://blog.kitware.com/cmake-and-the-default-build-type/

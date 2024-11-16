@@ -35,12 +35,12 @@ public:
   struct pressio_options get_options_impl() const override
   {
     struct pressio_options options;
-    set_meta(options, "poorjit:generator", gen_id, gen_impl);
-    set(options, "poorjit:extra_args", extra_args);
-    set(options, "poorjit:pkgconfig", pkgconfig_args);
     if(comp_impl) {
         options.copy_from(comp_impl->get_options());
     }
+    set_meta(options, "poorjit:generator", gen_id, gen_impl);
+    set(options, "poorjit:extra_args", extra_args);
+    set(options, "poorjit:pkgconfig", pkgconfig_args);
     return options;
   }
 
@@ -70,6 +70,9 @@ public:
     if(comp_impl) {
         options.copy_from(comp_impl->get_documentation());
     }
+    set_meta_docs(options, "poorjit:generator", "generater used to produce the source code", gen_impl);
+    set(options, "poorjit:extra_args", "additional arguments to pass to the compiler");
+    set(options, "poorjit:pkgconfig", "what pkgconfig modules to load");
     return options;
   }
 
@@ -86,9 +89,10 @@ public:
         jit_args.insert(jit_args.end(), pkg.begin(), pkg.end());
     }
     std::string source = gen_impl->generate();
-    if(!source.empty()) {
+    if(!source.empty() && last_source != source) {
         try {
             comp_impl = comp_mgr.jit(source, jit_args).get();
+            last_source = source;
         } catch(std::exception const& ex) {
             return set_error(1, ex.what());
         }
@@ -135,9 +139,16 @@ public:
   }
 
   void set_name_impl(std::string const& name) override {
-      gen_impl->set_name(name + "/generator");
-      if(comp_impl){
-          comp_impl->set_name(name + "/compressor");
+      if(name.empty()) {
+          gen_impl->set_name(name);
+          if(comp_impl){
+              comp_impl->set_name(name);
+          }
+      } else {
+          gen_impl->set_name(name + "/generator");
+          if(comp_impl){
+              comp_impl->set_name(name + "/compressor");
+          }
       }
   }
   std::vector<std::string> children_impl() const final {
@@ -158,6 +169,7 @@ public:
   poorjit::jitmgr<libpressio_compressor_plugin> comp_mgr;
   poorjit::jitlib<libpressio_compressor_plugin> comp_impl;
   std::string gen_id = "template";
+  std::string last_source = "";
   pressio_generator gen_impl = generator_plugins().build(gen_id);
   std::vector<std::string> extra_args;
   std::vector<std::string> pkgconfig_args;
